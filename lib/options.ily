@@ -81,10 +81,10 @@ setOption =
           ; TODO: change to oll-log
           (oll:log "Option set: ~a"
             (format "~a: ~a"
-              (os-path-join-dots path) val)))
+              path val)))
          ;; reject setting unknown options and report that
          ; TODO: change to oll-warning
-         (oll:warn "Not a valid option path: ~a" (os-path-join-dots path)))))
+         (oll:warn "Not a valid option path: ~a" path))))
 
 % Set a child option below a given option path.
 % #1: Optional boolean <force-set>
@@ -108,7 +108,7 @@ setChildOption =
          (setOption #t (append parent-path (list option)) val)
          (oll:warn
           "Trying to add child to non-existent option: ~a"
-          (os-path-join-dots parent-path)))))
+          (oll:os-path-join-dots parent-path)))))
 
 % Retrieve an option
 % Provide a tree path in dotted or list notation
@@ -122,7 +122,7 @@ getOption =
          ;; getAtree has returned #f
          (begin
           (oll:warn
-            "Trying to access non-existent option: ~a" (os-path-join-dots path))
+            "Trying to access non-existent option: ~a" (oll:os-path-join-dots path))
           #f))))
 
 % Same as \getOption, but retrieving non-existing options returns

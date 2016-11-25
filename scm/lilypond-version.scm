@@ -32,13 +32,11 @@
 ;;
 ;; All operators expect a LilyPond version as a string or as a three item list.
 
-(define-module (oll-core internal lilypond-version-predicates))
-
 (use-modules
  (lily)
  (srfi srfi-1))
 
-(define (calculate-version ref-version)
+(define (oll:calculate-version ref-version)
   "Return an integer representation of the LilyPond version,
    can be compared with the operators."
   (let ((ver-list
@@ -53,37 +51,37 @@
       (* 1000 (second ver-list))
       (third ver-list))))
 
-(define-public (lilypond-greater-than? ref-version)
+(define-public (oll:lilypond-greater-than? ref-version)
   "Return #t if the executed LilyPond version
    is greater than the given reference version"
-  (> (calculate-version (ly:version))
-     (calculate-version ref-version)))
+  (> (oll:calculate-version (ly:version))
+     (oll:calculate-version ref-version)))
 
-(define-public (lilypond-greater-than-or-equal? ref-version)
+(define-public (oll:lilypond-greater-than-or-equal? ref-version)
   "Return #t if the executed LilyPond version
    is greater than or equal to the given reference version"
-  (>= (calculate-version (ly:version))
-      (calculate-version ref-version)))
+  (>= (oll:calculate-version (ly:version))
+      (oll:calculate-version ref-version)))
 
-(define-public (lilypond-less-than? ref-version)
+(define-public (oll:lilypond-less-than? ref-version)
   "Return #t if the executed LilyPond version
    is less than the given reference version"
-  (< (calculate-version (ly:version))
-     (calculate-version ref-version)))
+  (< (oll:calculate-version (ly:version))
+     (oll:calculate-version ref-version)))
 
-(define-public (lilypond-less-than-or-equal? ref-version)
+(define-public (oll:lilypond-less-than-or-equal? ref-version)
   "Return #t if the executed LilyPond version
    is less than or equal to the given reference version"
-  (<= (calculate-version (ly:version))
-      (calculate-version ref-version)))
+  (<= (oll:calculate-version (ly:version))
+      (oll:calculate-version ref-version)))
 
-(define-public (lilypond-equals? ref-version)
+(define-public (oll:lilypond-equals? ref-version)
   "Return #t if the executed LilyPond version
    is equal to the given reference version"
-  (= (calculate-version (ly:version))
-     (calculate-version ref-version)))
+  (= (oll:calculate-version (ly:version))
+     (oll:calculate-version ref-version)))
 
-(define-public (lilypond-version-string ver-list)
+(define-public (oll:lilypond-version-string ver-list)
   "Return a string representation of a version list.
     Elements of the list can be either strings or integers"
   (string-join

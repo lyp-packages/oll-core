@@ -24,58 +24,43 @@
 %                                                                             %
 % openLilyLib is maintained by Urs Liska, ul@openlilylib.org                  %
 % and others.                                                                 %
-%       Copyright Urs Liska, 2016                                             %
+%       Copyright Jan-Peter Voigt, Urs Liska, 2016                            %
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Initializes oll-core and loads secondary internal functionality
+% Example file for stack implementation
 
-\version "2.19.22"
+\pinclude "../package.ly"
 
-% Add openLilyLib root directory to Guile's module load path
-% After this Scheme modules can be addressed starting from openLilyLib's
-% root directory (the parent of oll-core)
-\include "add-guile-path.ily"
-\addGuilePath #(os-path-join-unix openlilylib-root)
+% Create an empty <oll:stack> object
+mystack = #(oll:stack-create)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% Common functionality
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Populate the stack with numbers from 0 to 4
+% -> 4 is pushed last so it is on top of the stack
+#(for-each
+  (lambda (num)
+    (oll:push mystack num))
+  (iota 5))
 
-% A collection of general-purpose predicates
-#(use-modules (oll-core internal predicates))
+#(display "Stack populated with a range of numbers:\n")
+#(display mystack)
+#(newline)
 
-% Version predicates to execute code for specific LilyPond versions
-#(use-modules (oll-core internal lilypond-version-predicates))
+% read the topmost entry from the stack
+#(define top-one (oll:get mystack))
 
-% Helpers for handling Scheme association lists
-#(use-modules (oll-core internal alist-access))
+#(display (format "'get' topmost item, remains on stack: ~a\n" top-one))
+#(display mystack)#(newline)
 
-% Logging capabilities with different log levels
-\include "logging.ily"
+% Fetch topmost entry from stack
+#(define top-two (oll:pop mystack))
+#(display (format "Topmost item, now popped from stack: ~a\n" top-two))
+#(display mystack)#(newline)
 
-% Option handling,
-% for oll-core, other openLilyLib packages or arbitrary end-user code
-\include "options.ily"
-% Initialize option branch for oll-core
-\registerOption #'(oll-core root) #(this-parent)
+% Push arbitrary items on top of stack
+#(oll:push mystack "hi, how are you?")
+#(display "Arbitrary item pushed on top of stack.\n")
 
-\registerOption loaded-packages #'(oll-core)
-\registerOption loaded-modules #'()
-
-% Functionality to load and manage modules
-\include "module-handling.ily"
+#(display mystack)
 
 
-% Registering available modules
-% These modules are not automatically loaded with oll-core
-% but are available for \loadModule
-
-% Include files from a directory that match a pattern
-\registerModule oll-core.include-pattern
-
-% Welcome message.
-% First set log level to 'log so it will be displayed,
-% then set the default log level to 'warning.
-#(oll:log "oll-core: library infrastructure successfully loaded.")
-\setLogLevel #'warning

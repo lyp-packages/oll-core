@@ -25,7 +25,6 @@
 ;%                                                                             %
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-(define-module (oll-core internal alist-access))
 (use-modules
  (lily)
  (ice-9 common-list))
@@ -43,7 +42,7 @@
 ;; This is necessary as (ly:parser-lookup alst) will implicitly
 ;; create an empty list, which will usually result in strange
 ;; error conditions when a list name is misspelled.
-(define (check-alst funcname alst key-name val)
+(define (oll:check-alst funcname alst key-name val)
   (if (not (defined? alst))
       ; TODO: Change this to oll-warning (when this is transfered to oll-core)
       (ly:input-warning (*location*) "
@@ -58,7 +57,7 @@ which is probably not intended."
 ;; Set key <key-name> in alist <alst> to value <val>
 ;; If <in-place> is #t the key is replaced in-place if already present.
 ;; Otherwise (<in-place> is #f and/or key is not set) it is appended.
-(define (set-in-alist alst key-name val in-place)
+(define (oll:set-in-alist alst key-name val in-place)
   (let* ((process-alist
           (if in-place
               alst
@@ -68,19 +67,19 @@ which is probably not intended."
         (begin (set-cdr! where val) alst)
         (append alst (list (cons key-name val))))))
 
-;; Wrapper function around set-in-alist
+;; Wrapper function around oll:set-in-alist
 ;; Is used by \setAlist and \addToAlist
-(define (set-a-list funcname alst key-name val in-place)
-  (check-alst funcname alst key-name val)
+(define (oll:set-a-list funcname alst key-name val in-place)
+  (oll:check-alst funcname alst key-name val)
   (ly:parser-define! alst
-    (set-in-alist (ly:parser-lookup alst) key-name val in-place)))
+    (oll:set-in-alist (ly:parser-lookup alst) key-name val in-place)))
 
 ;; Retrieve entry <key-name> from alist <alst>.
 ;; If <return-pair> is #t then the function behaves like 'assoc',
 ;; that is it returns the key-value pair or #f.
 ;; Otherwise it returns only the value or #f without the chance of
 ;; discerning between a non-present key or a literal value #f.
-(define (get-from-alist alst key-name return-pair)
+(define (oll:get-from-alist alst key-name return-pair)
   (let ((intermediate (assoc key-name alst)))
     (if return-pair
         intermediate
@@ -94,7 +93,7 @@ which is probably not intended."
 ;; If <in-place> is #t the key is modified in place if already present,
 ;; otherwise it will be appended.
 ;; Intermediate nodes are always updated in place if the already exist.
-(define (set-in-atree tree path val in-place)
+(define (oll:set-in-atree tree path val in-place)
   (let ((key-name (car path)))
     (if (not (list? tree))
         (begin
@@ -102,44 +101,44 @@ which is probably not intended."
          (set! tree '())))
     (cond ((> (length path) 1)
            (let ((subtree (assoc-get key-name tree '())))
-             (set-in-alist
+             (oll:set-in-alist
               tree
               key-name
               ;; Intermediate nodes are always updated in-place
-              (set-in-atree subtree (cdr path) val #t)
+              (oll:set-in-atree subtree (cdr path) val #t)
               in-place)))
       (else
-       (set-in-alist tree key-name val in-place)))))
+       (oll:set-in-alist tree key-name val in-place)))))
 
-;; Wrapper function around set-in-atree,
+;; Wrapper function around oll:set-in-atree,
 ;; to be used by \setAtree and \addAtree
-(define (set-a-tree atree path val in-place)
+(define (oll:set-a-tree atree path val in-place)
   (ly:parser-define! atree
-    (set-in-atree (ly:parser-lookup atree) path val in-place)))
+    (oll:set-in-atree (ly:parser-lookup atree) path val in-place)))
 
 ;; Recursively walk the nested alist <tree> over the symbol-list <path>
 ;; and return the value for the last leaf in <path> or #f if the chain
 ;; is broken at any point.
-(define (get-from-tree tree path return-pair)
+(define (oll:get-from-tree tree path return-pair)
   (let ((key-name (car path)))
     (if (> (length path) 1)
         (let ((subtree (assoc-get key-name tree #f)))
           (if (list? subtree)
-              (get-from-tree subtree (cdr path) return-pair)
+              (oll:get-from-tree subtree (cdr path) return-pair)
               #f))
-        (get-from-alist tree (car path) return-pair))))
+        (oll:get-from-alist tree (car path) return-pair))))
 
 ;; Takes the alist <tree> and removes the node <path>,
 ;; returns a new list.
-(define (remove-value tree path)
+(define (oll:remove-value tree path)
   (let* ((key-name (car path))
          (subpath (cdr path))
          (subtree (assoc-get key-name tree '())))
     (cond
      ((> (length subpath) 1)
-      (set-in-alist tree key-name (remove-value subtree (cdr path)) #t))
+      (oll:set-in-alist tree key-name (oll:remove-value subtree (cdr path)) #t))
      (else
-      (set-in-alist tree key-name (assoc-remove! subtree (car subpath)) #t)))))
+      (oll:set-in-alist tree key-name (assoc-remove! subtree (car subpath)) #t)))))
 
 
 
@@ -164,19 +163,19 @@ which is probably not intended."
 ;; otherwise it is appended at the end of the alist.
 (define-public setAlist
   (define-void-function (alst key-name val)(symbol? symbol? scheme?)
-    (set-a-list 'setAlist alst key-name val #t)))
+    (oll:set-a-list 'setAlist alst key-name val #t)))
 
 ;; Set the node <key-name> to the value <val>.
 ;; If <key-name> is present it is moved to the end
 ;; otherwise it is appended to the alist.
 (define-public addToAlist
   (define-void-function (alst key-name val) (symbol? symbol? scheme?)
-    (set-a-list 'addToAlist alst key-name val #f)))
+    (oll:set-a-list 'addToAlist alst key-name val #f)))
 
 ;% removes one entry from association list
 (define-public removeFromAlist
   (define-void-function (alst key-name)(symbol? symbol?)
-    (check-alst 'removeFromAlist alst key-name #f)
+    (oll:check-alst 'removeFromAlist alst key-name #f)
     (ly:parser-define! alst
       (assoc-remove! (ly:parser-lookup alst) key-name))))
 
@@ -195,14 +194,14 @@ which is probably not intended."
 ;; Intermediate nodes are created if necessary.
 (define-public setAtree
   (define-void-function (atree path val)(symbol? list? scheme?)
-    (set-a-tree atree path val #t)))
+    (oll:set-a-tree atree path val #t)))
 
 ;; Set node <path> in a-tree <atree> to value <val>.
 ;; If <path> is present it is moved to the end, otherwise appended
 ;; Intermediate nodes are created if necessary.
 (define-public addAtree
   (define-void-function (atree path val)(symbol? list? scheme?)
-    (set-a-tree atree path val #f)))
+    (oll:set-a-tree atree path val #f)))
 
 ;; Retrieve a value from or a node from <path> in an a-tree <atree>.
 ;; The optional first argument <return-pair> controls the behaviour:
@@ -213,16 +212,16 @@ which is probably not intended."
 (define-public getAtree
   (define-scheme-function (return-pair atree path)
     ((boolean?) symbol? symbol-list-or-symbol?)
-    (check-alst 'getAtree atree path #f)
-    (get-from-tree (ly:parser-lookup atree) path return-pair)))
+    (oll:check-alst 'getAtree atree path #f)
+    (oll:get-from-tree (ly:parser-lookup atree) path return-pair)))
 
 ;; Remove node <path> from a-tree <atree>.
 ;; If <path> isn't present in <atree> it is not modified.
 (define-public remAtree
   (define-void-function (atree path)(symbol? list?)
-    (check-alst 'remAtree atree path #f)
+    (oll:check-alst 'remAtree atree path #f)
     (ly:parser-define! atree
-      (remove-value (ly:parser-lookup atree) path))))
+      (oll:remove-value (ly:parser-lookup atree) path))))
 
 
 ;; This is somewhat special and doesn't really fit in that module,
@@ -233,17 +232,17 @@ which is probably not intended."
 ;; It returns an alist with these key-value pairs, dropping the
 ;; first element of each context property.
 ;; Returns an empty list if noe
-(define-public extract-options
+(define-public oll:extract-options
   (define-scheme-function (ctx-mods)((ly:context-mod?))
-    (ly:warning "\"extract-options\" from module alist-access is deprecated.
-Please use the equivalent context-mod->props instead.")
+    (ly:warning "\"oll:extract-options\" from module alist-access is deprecated.
+Please use the equivalent oll:context-mod->props instead.")
     (map (lambda (o)
            (cons (cadr o) (caddr o)))
       (ly:get-context-mods ctx-mods))))
 
-;; predicate for require-props
+;; predicate for oll:require-props
 ;; which accepts an a-list or a context-mod
-(define (al-or-props? obj)
+(define (alist-or-props? obj)
   (if (or (ly:context-mod? obj)
           (and (list? obj)
                (every pair? obj)))
@@ -256,14 +255,14 @@ Please use the equivalent context-mod->props instead.")
       #t #f))
 
 ;; check a property list against a list of required properties and their predicates
-(define-public require-props
-  (define-scheme-function (function-name reqs props) (string? alist? al-or-props?)
+(define-public oll:require-props
+  (define-scheme-function (function-name reqs props) (string? alist? alist-or-props?)
     (let*
      ((success #t)
       ;; props can be passed either as a property list or a context-mod
       (props
        (if (ly:context-mod? props)
-           (context-mod->props props)
+           (oll:context-mod->props props)
            props))
 
       ;; determine missing properties
@@ -309,7 +308,7 @@ Please use the equivalent context-mod->props instead.")
 ;; Convenience function, retrieves a property alist from a context-mod object.
 ;; mod has to satisfy the ly:context-mod? predicate,
 ;; returns an alist with all key-value pairs set.
-(define-public (context-mod->props mod)
+(define-public (oll:context-mod->props mod)
   (map
    (lambda (prop)
      (cons (cadr prop) (caddr prop)))

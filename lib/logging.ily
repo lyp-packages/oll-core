@@ -28,7 +28,7 @@
 % Implements logging facilities (to console and/or files)
 
 % Constant symbols representing the different log levels.
-#(define oll-loglevels
+#(define oll:loglevels
    '((nolog . 0)
      (critical . 1)
      (warning . 2)
@@ -39,21 +39,21 @@
 % We can't use oll-core's options for this because they are not loaded yet -
 % and the option handline needs the logging code ...
 % Initialize to 'log, will later be set to 'warning
-#(define oll-loglevel 2)
+#(define oll:current-loglevel 2)
 
 % Set the log level. oll-core's oll: logging functions won't do anything
 % if their log level is lower than the currently set level.
-% <level> has to be one of the symbols used in 'oll-loglevels'
+% <level> has to be one of the symbols used in 'oll:loglevels'
 setLogLevel =
 #(define-void-function (level)(symbol?)
-   (let ((new-level (getAtree #t 'oll-loglevels (list level))))
+   (let ((new-level (getAtree #t 'oll:loglevels (list level))))
      (if new-level
-         (set! oll-loglevel (cdr new-level))
+         (set! oll:current-loglevel (cdr new-level))
          (oll:warn
           (*location*) "Not a valid openLilyLib log level: ~a. Ignoring" level))))
 
 % Open log file
-#(define oll-logfile
+#(define oll:logfile
    (open-output-file
     (format "~a.oll.log" (ly:parser-output-name (*parser*)))))
 
@@ -61,16 +61,16 @@ setLogLevel =
 % by comparing the value passed in <loglevel> to the
 % currently active log level
 #(define (oll:do-log loglevel)
-   (>= oll-loglevel (getAtree 'oll-loglevels `(,loglevel))))
+   (>= oll:current-loglevel (getAtree 'oll:loglevels `(,loglevel))))
 
 % Generic function to consistently write to log file.
 % <title> is a sectioning header in the log file
 % <fmt> and <vals> are simply passed along.
 #(define (oll:log-to-file title fmt vals)
-   (format oll-logfile
+   (format oll:logfile
      (string-append
       "\n"
-      (os-path-join (location->normalized-path (*location*)))
+      (oll:os-path-join (oll:location->normalized-path (*location*)))
       "\nLine: "
       (number->string (cadr (ly:input-file-line-char-column (*location*))))
 
@@ -80,7 +80,7 @@ setLogLevel =
       title))
 
 % Generic function to consistently format the output for the logging functions
-#(define (oll-format-log fmt vals)
+#(define (oll:format-log fmt vals)
    (apply format (format "\n\n~a\n" fmt) vals))
 
 % Critical error
@@ -91,7 +91,7 @@ setLogLevel =
        (begin
         (oll:log-to-file "Error" fmt vals)
         (ly:input-message (*location*)
-         (format "Error:~a" (oll-format-log fmt vals)))
+         (format "Error:~a" (oll:format-log fmt vals)))
         (ly:error ""))))
 
 % Warning
@@ -100,7 +100,7 @@ setLogLevel =
        (begin
         (oll:log-to-file "Warning" fmt vals)
         (ly:input-warning (*location*)
-           (oll-format-log fmt vals)))))
+           (oll:format-log fmt vals)))))
 
 % General logging
 #(define (oll:log fmt . vals)
@@ -108,7 +108,7 @@ setLogLevel =
        (begin
         (oll:log-to-file "Event" fmt vals)
         (ly:input-message (*location*)
-           (oll-format-log fmt vals)))))
+           (oll:format-log fmt vals)))))
 
 % Debug output
 #(define (oll:debug fmt . vals)
@@ -116,4 +116,4 @@ setLogLevel =
        (begin
         (oll:log-to-file "Debug info" fmt vals)
         (ly:input-message (*location*)
-          (oll-format-log fmt vals)))))
+          (oll:format-log fmt vals)))))

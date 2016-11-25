@@ -28,29 +28,12 @@
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Provide the command
-%    \addGuilePath
-% to add a folder to Guile's module load path
-%
-% Originally provided by Jan-Peter Voigt
-% and simplified by Urs Liska
+#(lyp:load "scm/predicates.scm")
+#(lyp:load "scm/lilypond-version.scm")
+#(lyp:load "scm/alist-access.scm")
+#(lyp:load "scm/stack.scm")
+#(lyp:load "scm/tree.scm")
 
-\version "2.19.22"
-
-% add a directory to Guile's %load-path (Scheme module search path)
-% If path is an absolute path it is simply normalized,
-% but if it's relative it is appended to the directory
-% of the file the command is used in.
-#(define-public addGuilePath
-   (define-void-function (path)(string?)
-     (let* ((path-arg (os-path-split path))
-            (joined-path
-             (if (os-path-absolute? path-arg)
-                 (os-path-normalize path-arg)
-                 (os-path-normalize
-                  (append
-                   (os-path-split (this-dir))
-                   path-arg))))
-            (new-path (os-path-join-unix joined-path)))
-       (if (not (member new-path %load-path))
-           (set! %load-path `(,new-path ,@%load-path))))))
+\pinclude "lib/os-path.ily"
+\pinclude "lib/logging.ily"
+\pinclude "lib/options.ily"
