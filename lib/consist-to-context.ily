@@ -28,14 +28,24 @@
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#(lyp:load "scm/predicates.scm")
-#(lyp:load "scm/lilypond-version.scm")
-#(lyp:load "scm/alist-access.scm")
-#(lyp:load "scm/stack.scm")
-#(lyp:load "scm/tree.scm")
-
-\pinclude "lib/os-path.ily"
-\pinclude "lib/logging.ily"
-\pinclude "lib/options.ily"
-\pinclude "lib/consist-to-contexts.ily"
-\pinclude "lib/grob-location.ily"
+% Install the given engraver (procedure) in the contexts
+% specified by the argument list
+consistToContexts =
+#(define-scheme-function (proc contexts)
+   (procedure? symbol-list?)
+   #{
+     \layout {
+       #(map
+         (lambda (ctx)
+           (if (and (defined? ctx)
+                    (ly:context-def? (module-ref (current-module) ctx)))
+               #{
+                 \context {
+                   #(module-ref (current-module) ctx)
+                   \consists #proc
+                 }
+               #}
+               ; TODO: Make the input location point to the location of the *caller*
+               (oll:warn (format "Trying to install engraver to non-existent context ~a" ctx))))
+         contexts)
+     } #})
